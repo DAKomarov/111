@@ -1,0 +1,219 @@
+#include <stdio.h>
+#include <string.h>
+void filecopy_n(FILE *file_);
+void filecopy_E(FILE *file_);
+void filecopy_ev(FILE *file_);
+void filecopy_b(FILE *file_);
+void filecopy_s(FILE *file_);
+void filecopy_T(FILE *file_);
+void filecopy_tv(FILE *file_);
+void filecopy(FILE *file);
+void control(char *flag, FILE *file_);
+
+int main(int argc, char *argv[]) {
+  int n_flag = 1;
+  FILE *file;
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] == '-') {
+      break;
+    }
+    n_flag++;
+  }
+  if (n_flag == argc) {
+    file = fopen(argv[n_flag - 1], "r");
+    if (file != NULL) {
+      filecopy(file);
+      fclose(file);
+    }
+    if (file == NULL) {
+      printf("error Files\n");
+    }
+  } else {
+    for (int i = 1; i < argc; i++) {
+      if (argv[i][0] != '-') {
+        file = fopen(argv[i], "r");
+        if (file != NULL) {
+          control(argv[n_flag], file);
+        } else {
+          printf("error Files\n");
+        }
+        fclose(file);
+      }
+    }
+  }
+  return 0;
+}
+
+void control(char *flag, FILE *file_) {
+  if ((strcmp(flag, "-n") == 0) || (strcmp(flag, "--number") == 0)) {
+    filecopy_n(file_);
+  }
+  if (strcmp(flag, "-E") == 0) {
+    filecopy_E(file_);
+  }
+  if ((strcmp(flag, "-e") == 0) || (strcmp(flag, "-ev") == 0)) {
+    filecopy_ev(file_);
+  }
+  if ((strcmp(flag, "-b") == 0) || (strcmp(flag, "--number-nonblank") == 0)) {
+    filecopy_b(file_);
+  }
+  if ((strcmp(flag, "-s") == 0) || (strcmp(flag, "--squeeze-blank") == 0)) {
+    filecopy_s(file_);
+  }
+  if ((strcmp(flag, "-T") == 0)) {
+    filecopy_T(file_);
+  }
+  if ((strcmp(flag, "-t") == 0) || (strcmp(flag, "-tv") == 0)) {
+    filecopy_tv(file_);
+  }
+  if ((strcmp(flag, "-n") != 0) && (strcmp(flag, "--number") != 0) &&
+      (strcmp(flag, "-E") != 0) && (strcmp(flag, "-e") != 0) &&
+      (strcmp(flag, "-ev") != 0) && (strcmp(flag, "-b") != 0) &&
+      (strcmp(flag, "--number-nonblank") != 0) && (strcmp(flag, "-s") != 0) &&
+      (strcmp(flag, "--squeeze-blank") != 0) && (strcmp(flag, "-T") != 0) &&
+      (strcmp(flag, "-t") != 0) && (strcmp(flag, "-tv") != 0)) {
+    printf("error Flags");
+  }
+}
+
+void filecopy_n(FILE *file_) {
+  char c;
+  int n = 1;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (n == 1) {
+        printf("%6d\t", n);
+        n++;
+      }
+      printf("%c", c);
+      if (c == '\n') {
+        printf("%6d\t", n);
+        n++;
+      }
+    } else
+      break;
+  }
+}
+
+void filecopy_E(FILE *file_) {
+  char c;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (c == '\n') {
+        printf("$");
+      }
+      printf("%c", c);
+    } else
+      break;
+  }
+}
+
+void filecopy_ev(FILE *file_) {
+  char c;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (c <= 32 && c != 10 && c != 9 && c != 32) {
+        printf("^");
+        c += 64;
+      }
+      if (c == 127) {
+        printf("^");
+        c = 63;
+      }
+      if (c == 10) {
+        printf("$%c", c);
+      } else
+        printf("%c", c);
+    } else
+      break;
+  }
+}
+
+void filecopy_b(FILE *file_) {
+  // char c, prevC;
+  int n = 1;
+  char c = fgetc(file_);
+  char prevC = c;
+  while (1) {
+    if (c != EOF) {
+      if ((c != '\n' && prevC == '\n') || (n == 1 && c != '\n')) {
+        printf("%6d\t", n);
+        n++;
+      }
+      printf("%c", c);
+      prevC = c;
+      c = fgetc(file_);
+    } else
+      break;
+  }
+}
+
+void filecopy_s(FILE *file_) {
+  char c, prevC, prevPrevC;
+  int check = 0;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (c == '\n' && prevC == '\n' && prevPrevC == '\n') {
+        check = 1;
+      }
+      if (check == 0) {
+        printf("%c", c);
+      }
+      prevPrevC = prevC;
+      prevC = c;
+      check = 0;
+    } else
+      break;
+  }
+}
+
+void filecopy_T(FILE *file_) {
+  char c;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (c == '\t') {
+        printf("^I");
+      } else
+        printf("%c", c);
+    } else
+      break;
+  }
+}
+
+void filecopy_tv(FILE *file_) {
+  char c;
+  while (1) {
+    c = fgetc(file_);
+    if (c != EOF) {
+      if (c <= 32 && c != 10 && c != 9 && c != 32) {
+        printf("^");
+        c += 64;
+      }
+      if (c == 127) {
+        printf("^");
+        c = 63;
+      }
+      if (c == 9) {
+        printf("^I");
+      } else
+        printf("%c", c);
+    } else
+      break;
+  }
+}
+
+void filecopy(FILE *file) {
+  char c;
+  while (1) {
+    c = fgetc(file);
+    if (c != EOF) {
+      printf("%c", c);
+    } else
+      break;
+  }
+}
