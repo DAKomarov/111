@@ -1,0 +1,218 @@
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <ctype.h>
+
+typedef struct flagsList {
+  int flagI;
+  int flagV;
+  int flagC;
+  int flagL;
+  int flagN;
+  int flagH;
+  int flagS;
+  int flagNON;
+} Flags;
+void checkFlags(char *arrFlags, struct flagsList *flags);
+void runApp(char *pattern, struct flagsList *flags, char *file, int nFiles,
+            int isFlags);
+//#include "s21_grep.h"
+
+void InitFlafList(Flags *flags) {
+  flags->flagI = 0;
+  flags->flagV = 0;
+  flags->flagC = 0;
+  flags->flagL = 0;
+  flags->flagN = 0;
+  flags->flagH = 0;
+  flags->flagS = 0;
+  flags->flagNON = 0;
+}
+
+int main(int argc, char **argv) {
+  struct flagsList flags;
+  InitFlafList(&flags);
+  char pattern[1000];
+  int patCounter, nFiles = argc - 3, isFlags = 0;
+  for (int i = 0; i < argc; i++)
+
+  {
+    if (argv[i][0] == '-') {
+      isFlags = 1;
+      checkFlags(argv[i], &flags);
+      if (flags.flagNON == 1) {
+        printf("Error_Flag\n");
+      }
+      if (i == 2) {
+        patCounter = i - 1;
+      } else {
+        patCounter = i + 1;
+      }
+      break;
+    }
+  }
+  if (isFlags == 0) {
+    for (int i = 2; i <= argc - 1; i++) {
+      runApp(argv[1], &flags, argv[i], nFiles, isFlags);
+    }
+  } else {
+    strcpy(pattern, argv[patCounter]);
+    for (int i = 3; i <= argc - 1; i++) {
+      runApp(pattern, &flags, argv[i], nFiles, isFlags);
+    }
+  }
+  return 0;
+}
+
+void runApp(char *pattern, struct flagsList *flags, char *file, int nFiles,
+            int isFlags) {
+  int n = 1, flagL = 0, flagC = 0;
+  FILE *fp;
+  char buffer[1000];
+  fp = fopen(file, "r");
+  if (fp != NULL) {
+    while (!feof(fp)) {
+      fgets(buffer, 1000, fp);
+      if (isFlags == 0 || flags->flagC == 1 || flags->flagL == 1) {
+        if (strstr(buffer, pattern) != NULL) {
+          flagC++;
+          flagL++;
+          if (nFiles > 0) {
+            if (flags->flagC == 0 && flags->flagL == 0)
+              printf("%s:%s", file, buffer);
+          } else {
+            if (flags->flagC == 0) {
+              printf("%s", buffer);
+            }
+          }
+          if (feof(fp) && flags->flagC == 0 && flags->flagL == 0) {
+            printf("\n");
+          }
+        }
+      } else {
+        if (flags->flagV == 1) {
+          if (strstr(buffer, pattern) == NULL) {
+            flagC++;
+            flagL++;
+            if (flags->flagC == 0 && flags->flagL == 0) {
+              if (nFiles > 1)
+                printf("%s:%s", file, buffer);
+              else
+                printf("%s", buffer);
+              if (feof(fp)) {
+                printf("\n");
+              }
+            }
+          }
+        }
+        if (flags->flagI == 1) {
+          if (strcasestr(buffer, pattern) != NULL) {
+            if (!feof(fp)) {
+              flagC++;
+              flagL++;
+              if (flags->flagC == 0 && flags->flagL == 0) {
+                if (nFiles > 1)
+                  printf("%s:%s", file, buffer);
+                else
+                  printf("%s", buffer);
+              }
+            }
+          }
+        }
+        if (flags->flagN == 1) {
+          if (strstr(buffer, pattern) != NULL) {
+            flagC++;
+            flagL++;
+            if (flags->flagC == 0 && flags->flagL == 0) {
+              if (nFiles > 1)
+                printf("%s:%d:%s", file, n, buffer);
+              else
+                printf("%d:%s", n, buffer);
+              if (feof(fp)) {
+                printf("\n");
+              }
+            }
+          }
+          n++;
+        }
+        if (flags->flagH == 1) {
+          if (strstr(buffer, pattern) != NULL) {
+            flagC++;
+            flagL++;
+            if (flags->flagC == 0 && flags->flagL == 0) {
+              printf("%s", buffer);
+            }
+            if (feof(fp)) {
+              printf("\n");
+            }
+          }
+        }
+        if (flags->flagS == 1) {
+          if (strstr(buffer, pattern) != NULL) {
+            flagC++;
+            flagL++;
+            if (flags->flagC == 0 && flags->flagL == 0) {
+              if (nFiles > 1)
+                printf("%s%s:", file, buffer);
+              else
+                printf("%s", buffer);
+              if (feof(fp)) {
+                printf("\n");
+              }
+            }
+          }
+        }
+      }
+    }
+    if (flags->flagC == 1) {
+      if (nFiles > 1) {
+        printf("%s:%d", file, flagC);
+      } else {
+        printf("%d", flagC);
+      }
+      if (feof(fp)) {
+        printf("\n");
+      }
+    }
+    if (flags->flagL == 1) {
+      if (flagL > 0) {
+        printf("%s\n", file);
+      }
+    }
+  } else {
+    printf("%s:error File\n", file);
+  }
+  fclose(fp);
+}
+
+void checkFlags(char *arrFlags, struct flagsList *flags) {
+  if (strchr(arrFlags, 'i') != NULL) {
+    flags->flagI = 1;
+  }
+  if (strchr(arrFlags, 'v') != NULL) {
+    flags->flagV = 1;
+  }
+  if (strchr(arrFlags, 'c') != NULL) {
+    flags->flagC = 1;
+  }
+  if (strchr(arrFlags, 'l') != NULL) {
+    flags->flagL = 1;
+  }
+  if (strchr(arrFlags, 'n') != NULL) {
+    flags->flagN = 1;
+  }
+  if (strchr(arrFlags, 'h') != NULL) {
+    flags->flagH = 1;
+  }
+  if (strchr(arrFlags, 's') != NULL) {
+    flags->flagS = 1;
+  }
+  if ((strchr(arrFlags, 'i') == NULL) && (strchr(arrFlags, 'v') == NULL) &&
+      (strchr(arrFlags, 'c') == NULL) && (strchr(arrFlags, 'l') == NULL) &&
+      (strchr(arrFlags, 'n') == NULL) && (strchr(arrFlags, 'h') == NULL) &&
+      (strchr(arrFlags, 's') == NULL)) {
+    flags->flagNON = 1;
+  }
+}
